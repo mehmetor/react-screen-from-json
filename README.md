@@ -3,9 +3,9 @@ Ekranlarını JSON dosyasında yer alan konfigürasyona göre otomatik olarak ol
 ### DevExtreme UI Widgets and Data Layers
 - Editors
 -  DataGrid
-  - Row Editing
-  - Reordering
-  - JSON Data Binding
+    - Row Editing
+    - Reordering
+    - JSON Data Binding
 - Query
 - Localization
 
