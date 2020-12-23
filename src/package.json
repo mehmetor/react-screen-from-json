@@ -1,0 +1,22 @@
+{
+  "name": "react-dyn-screen",
+  "description": "The DataGrid allows users to drag and drop rows. Use the icon to the left of the row as the drag handle.\nTo enable this feature, set the allowReordering option to true and change the row index in the onReorder function.\nUse the rowDragging object to configure the row drag and drop feature.\n",
+  "dependencies": {
+    "devexpress-diagram": "2.0.5",
+    "devexpress-gantt": "2.0.8",
+    "devextreme": "20.2.4",
+    "devextreme-quill": "0.9.7",
+    "devextreme-react": "20.2.4",
+    "es6-object-assign": "1.1.0",
+    "jszip": "3.5.0",
+    "luxon": "1.25.0",
+    "moment": "2.29.1",
+    "preact": "10.5.7",
+    "prop-types": "15.7.2",
+    "react": "16.14.0",
+    "react-dom": "16.14.0",
+    "react-moment": "1.0.0",
+    "rrule": "2.6.6"
+  },
+  "keywords": []
+}

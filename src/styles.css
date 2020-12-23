@@ -1,0 +1,15 @@
+.options {
+  padding: 20px;
+  background-color: rgba(191, 191, 191, 0.15);
+}
+
+.caption {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.option {
+  width: 20%;
+  display: inline-block;
+  margin-right: 10px;
+}
