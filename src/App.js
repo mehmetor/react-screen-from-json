@@ -1,5 +1,5 @@
 import React from "react";
-
+import { useSelector, useDispatch } from "react-redux";
 import DataGrid, {
   Column,
   RowDragging,
@@ -10,154 +10,126 @@ import DataGrid, {
   FilterRow
 } from "devextreme-react/data-grid";
 import { types } from "./data.js";
-import { ScreenConfig } from "./appsettings.plugin.screens.json";
-import Query from "devextreme/data/query";
 import { CheckBox, Button, TextArea, SelectBox } from "devextreme-react";
-import { locale, formatDate } from "devextreme/localization";
+import { locale } from "devextreme/localization";
+import { Form, GroupItem, SimpleItem } from "devextreme-react/form";
+import { updateScreen } from "./config/configSlice";
+import {
+  setScreen,
+  reorderColumns,
+  columnRemoving,
+  columnUptading
+} from "./config/screenSlice";
 
-const defaultScreen = "PaymentType";
+const defaultScreenName = "PaymentType";
 
 const App = (props) => {
-  const textBoxRef = React.createRef();
+  let dispatch = useDispatch();
+  const { Names, Screens, Lists } = useSelector((s) => s.config);
+  const ScreenConfig = useSelector((s) => s.config);
+  const Screen = useSelector((s) => s.screen);
+  const [textBoxRef, setTextBoxRef] = React.useState(null);
   const [state, setState] = React.useState({
-    columns: [],
-    showDragIcons: true,
-    displayColumns: [],
-    copySuccess: "",
-    screen: "",
-    config: ScreenConfig
+    name: defaultScreenName
   });
 
-  let now = new Date();
-
-  ScreenConfig.Lists.DateFormats.map((item) => {
-    item.caption = item.format
-      ? formatDate(now, item.format[locale] || item.format.tr)
-      : "no caption";
-    return item;
-  });
-
-  function onRowRemoving(e) {
-    //e.cancel = true;
-    const newColumns = state.columns.filter((r) => r.name !== e.data.name);
-
-    setState({ ...state, columns: newColumns });
-    return;
-  }
-
-  function onRowUpdating(e) {
-    //row.cancel = true;
-
-    const newColumns = state.columns.map((r) => {
-      return r.name !== e.newData.name ? r : { ...r, ...e.newData };
-    });
-
-    ScreenConfig.Screens[state.screen].columns = newColumns;
-
-    setState({
-      ...state,
-      columns: newColumns,
-      config: ScreenConfig
-    });
-    return;
-  }
-
-  function onReorder(e) {
+  function onColumnsReorder(e) {
     const visibleRows = e.component.getVisibleRows();
-    const newColumns = [...state.columns];
-    const toIndex = newColumns.indexOf(visibleRows[e.toIndex].data);
-    const fromIndex = newColumns.indexOf(e.itemData);
-
-    newColumns.splice(fromIndex, 1);
-    newColumns.splice(toIndex, 0, e.itemData);
-
-    newColumns.map((t, i) => {
-      t.index = i;
-      return t;
-    });
-
-    ScreenConfig.Screens[state.screen].columns = newColumns;
-
-    setState({
-      ...state,
-      columns: newColumns,
-      config: ScreenConfig
-    });
+    const to = visibleRows[e.toIndex].data;
+    const itemData = e.itemData;
+    const newColumns = [...Screen.columns];
+    dispatch(reorderColumns({ to, itemData, newColumns }));
+    //onColumnsSaved()
   }
 
-  function textBox() {
-    return textBoxRef.current.instance;
+  function onColumnsRowRemoving(e) {
+    let key = e.data.name;
+    const newColumns = [...Screen.columns];
+    dispatch(columnRemoving({ key, newColumns }));
+    return;
   }
 
-  const onScreenChanged = React.useCallback((args) => {
-    setState((s) => {
-      return {
-        ...s,
-        screen: args.value,
-        columns: Query(ScreenConfig.Screens[args.value].columns)
-          .sortBy("index")
-          .toArray()
-      };
-    });
-  }, []);
+  function onColumnsRowUpdating(e) {
+    console.log("columnUptading", e);
+    const newColumns = [...Screen.columns];
+    const newData = e.newData;
+    const key = e.key;
+    dispatch(columnUptading({ key, newData, newColumns }));
+    return;
+  }
+
+  // function textBox() {
+  //   return textBoxRef.current.instance;
+  // }
+
+  const onScreenChanged = React.useCallback(
+    (args) => {
+      const sc = Screens[args.value];
+      setState({ name: args.value });
+      if (sc) {
+        console.log("setScreen", sc);
+        dispatch(setScreen({ screen: sc, name: args.value }));
+      }
+    },
+    [Screens, dispatch]
+  );
 
   function onCopy(args) {
-    console.log(locale());
-
+    dispatch(updateScreen({ screen: Screen, name: state.name }));
+    
+    let textBox = textBoxRef;
     setTimeout(() => {
-      textBox._input()[0].select();
+      //textBox._input()[0].select();
+      textBox._instance._input()[0].select()
       document.execCommand("copy");
       setState({ ...state, copySuccess: "Copied!" });
-    }, 10);
+    }, 100);
     setTimeout(() => {
       setState({ ...state, copySuccess: null });
     }, 2000);
   }
 
-  function onSaved(data) {
-    setState({
-      ...state,
-      columns: state.columns
-    });
-  }
+  function onColumnsSaved() {}
 
   React.useEffect(() => {
-    setState((s) => {
-      onScreenChanged({ value: defaultScreen });
-      return { ...s, screen: defaultScreen };
-    });
-  }, [onScreenChanged]);
+    const sc = Screens[defaultScreenName];
+    if (sc) dispatch(setScreen({ screen: sc, name: defaultScreenName }));
+    console.log("X useEffect", defaultScreenName, sc);
+  }, [Screens, dispatch]);
 
   return (
     <React.Fragment>
+      {/* <div className="options">
+        <pre>{JSON.stringify(Screens[state.name])}</pre>
+      </div> */}
       <div className="options">
-        <div className="option">
-          <SelectBox
-            dataSource={ScreenConfig.Names}
-            value={state.screen}
-            onValueChanged={onScreenChanged}
-          />
-        </div>
-        <div className="option">
-          <Button
-            width={120}
-            text={state.copySuccess ? state.copySuccess : "Copy"}
-            type="default"
-            stylingMode="contained"
-            onClick={onCopy}
-          />
-        </div>
+        <Form formData={Screen}>
+          <GroupItem colCount={2}>
+            <GroupItem>
+              <SelectBox
+                dataSource={Names}
+                value={state.name}
+                onValueChanged={onScreenChanged}
+              />
+            </GroupItem>
+            <GroupItem>
+              <SimpleItem dataField="title" />
+            </GroupItem>
+          </GroupItem>
+        </Form>
+
+        <div className="option"></div>
       </div>
 
       <DataGrid
         //height={400}
         //width={"100%"}
-        dataSource={state.columns}
+        dataSource={Screen.columns}
         showBorders={false}
         keyExpr={"name"}
-        onRowUpdating={onRowUpdating}
-        onRowRemoving={onRowRemoving}
-        onSaved={onSaved}
+        onRowUpdating={onColumnsRowUpdating}
+        onRowRemoving={onColumnsRowRemoving}
+        onSaved={onColumnsSaved}
         hoverStateEnabled={true}
         allowColumnResizing={true}
         allowColumnReordering={true}
@@ -175,11 +147,7 @@ const App = (props) => {
           useIcons={true}
         />
 
-        <RowDragging
-          allowReordering={true}
-          onReorder={onReorder}
-          showDragIcons={state.showDragIcons}
-        />
+        <RowDragging allowReordering={true} onReorder={onColumnsReorder} />
         <Scrolling mode="virtual" />
         <Sorting mode="none" />
 
@@ -192,7 +160,7 @@ const App = (props) => {
         </Column>
         <Column dataField="format">
           <Lookup
-            dataSource={ScreenConfig.Lists.DateFormats}
+            dataSource={Lists.DateFormats}
             valueExpr="localized"
             displayExpr={(item) => {
               return (
@@ -206,17 +174,26 @@ const App = (props) => {
       </DataGrid>
 
       <div className="options">
-        <div>
-          <TextArea
-            ref={textBoxRef}
-            height={500}
-            value={JSON.stringify({ ScreenConfig: state.config }, null, 2)}
-            style={{
-              fontFamily:
-                "'MonoLisa', 'Menlo', 'Monaco', 'Courier New', 'monospace'"
-            }}
+        <div className="option">
+          <Button
+            width={120}
+            text={state.copySuccess ? state.copySuccess : "Copy Json"}
+            type="default"
+            stylingMode="contained"
+            onClick={onCopy}
           />
         </div>
+      </div>
+      <div className="options">
+        <TextArea
+          ref={(ref) => {console.log("textBox", ref); setTextBoxRef(ref)}}
+          height={500}
+          value={JSON.stringify({ ScreenConfig: ScreenConfig }, null, 2)}
+          style={{
+            fontFamily:
+              "'MonoLisa', 'Menlo', 'Monaco', 'Courier New', 'monospace'"
+          }}
+        />
       </div>
     </React.Fragment>
   );
