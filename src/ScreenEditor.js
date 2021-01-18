@@ -1,4 +1,5 @@
 import React from "react";
+import { useParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { SelectBox, TabPanel, Tabs, Button } from "devextreme-react";
 import Form, {
@@ -17,8 +18,9 @@ import { ColumnEditor, SubModelConfig, Result } from "./components";
 
 const ScreenEditor = () => {
 	let dispatch = useDispatch();
+	let { Name } = useParams();
 	const { Names, Screens } = useSelector((s) => s.slice.config);
-	const { screen: Screen, name: Name } = useSelector((s) => {
+	const { screen: Screen } = useSelector((s) => {
 		return s.slice;
 	});
 
@@ -37,16 +39,6 @@ const ScreenEditor = () => {
 		dispatch(resetStorage());
 	};
 
-	const onScreenChanged = React.useCallback(
-		(args) => {
-			const sc = Screens[args.value];
-			if (sc) {
-				dispatch(setScreen({ screen: sc, name: args.value }));
-			}
-		},
-		[Screens, dispatch]
-	);
-
 	React.useEffect(() => {
 		const sc = Screens[Name];
 		if (sc) dispatch(setScreen({ screen: sc, name: Name }));
@@ -58,11 +50,7 @@ const ScreenEditor = () => {
 				<Form>
 					<GroupItem colCount={2}>
 						<Item>
-							<SelectBox
-								dataSource={Names}
-								value={Name}
-								onValueChanged={onScreenChanged}
-							/>
+
 						</Item>
 						<GroupItem colCount={2}>
 							<Item
